@@ -41,3 +41,8 @@ def register(request):
 		user_form = UserForm()
 
 	return render(request, 'reviews/registration.html', {'registered': registered, 'user_form': user_form})
+
+@login_required
+def user_logout(request):
+	logout(request)
+	return HttpResponseRedirect(reverse('reviews:UserLogin'))
