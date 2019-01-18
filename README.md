@@ -108,5 +108,70 @@
     ```
     
 4. Model -> View -> Template로 구성
+    * 모델 분석
+        * movies.csv
+        ```
+        //movieId,movieName,genres
+        176601,Black Mirror (2011),(no genres listed)
+        176621,Boniface's Holiday (1965),Animation|Children|Comedy|Romance
+        ```
+        * ratings.csv
+        ```
+        userId,movieId,rating,timestamp
+        1,1,4.0,964982703
+        ```
+        * tags.csv
+        ```
+        userId,movieId,tag,timestamp
+        2,60756,funny,1445714994
+        ```
+    * 모델 작성
+    ```
+    // genere
+    from django.db import models
+
+    class genre(models.Model):
+        name = models.CharField(max_length=64)
+
+        def __str__(self):
+            return self.name
+    
+    // movie
+    class movie(models.Model):
+        movieId = models.CharField(max_length=16, primary_key=True, db_column='movieId')
+        title = models.CharField(max_length=128)
+        year = models.IntegerField(null=True)
+
+        def __str__(self):
+            return self.title
+
+    // tags
+    class rating(models.Model):
+        userId = models.CharField(max_length=16)
+        movieId = models.CharField(max_length=16)
+        rate = models.DecimalField(decimal_places=2, max_digits=4)
+        timestamp = models.DateTimeField()
+
+        def __str__(self):
+            return "userId: {}, movieId: {}, rating: {}".format(self.userId, self.movieId, self.rate)
+    ```
+
+    * 모델 연결
+    ```
+    // movie
+    class movie(models.Model):
+        genres = models.ManyToManyField(genre, related_name='movies', db_table='movie_genre')
+    ```
+
+    * 사용자
+    ```
+    from django.contrib.auth.models import User
+    class UserInfo(models.Model):
+        user = models.OneToOneField(User, on_delete=models.CASCADE)
+
+        def __str__(self):
+            return self.user.username    
+    ```
+
 
 
