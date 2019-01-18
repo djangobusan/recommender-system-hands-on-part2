@@ -4,12 +4,17 @@
 		{% load staticfiles %}
 		<title>DBUG - 영화 추천 시스템 만들기 Part2</title>
 		<meta charset="utf-8">
-		<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap.min.css" %}">
 		<style>
 		body {
   			padding-top: 3.5rem;
 		}
 		</style>
+		<script type="text/javascript" src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+		<link rel="stylesheet" type="text/css" href="{% static 'css/bootstrap.min.css' %}">
+		<script type="text/javascript" src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+		</style>
+		{% block block_script %}
+		{% endblock block_script %}		
 	</head>
 
 	<body>
@@ -43,14 +48,30 @@
 			</div>
 		</nav>
 
-	<main>
-		<div class="container">
-			{% block body_block %}
-			{% endblock body_block %}							
-		</div>					
-	</main>
-
-	<script type="text/javascript" src="{% static "js/jquery-3.3.1.min.js" %}"></script>
-	<script type="text/javascript" src="{% static "js/bootstrap.bundle.min.js" %}"></script>
+		<div class="container-fluid h-100">
+			<div class="row h-100">
+				<aside class="col-12 col-md-2 p-0 bg-dark">
+					<nav class="navbar navbar-expand navbar-dark bg-dark flex-md-column flex-row align-items-start">
+						<div class="collapse navbar-collapse">
+							<ul id="sidebar">
+								{% if genres %}
+									<ul class="flex-md-column flex-row navbar-nav w-100 justify-content-between">
+									{% for genre in genres %}
+										<li class="nav-item"><a class="nav-link pl-0" href="/genre/{{ genre.name }}">{{ genre.name}}</a></li>
+									{% endfor %}
+									</ul>
+								{% endif %}
+							</ul>
+						</div>
+					</nav>
+				</aside>
+			</div>		
+		</div>
+				<main>
+			<div class="container">
+				{% block body_block %}
+				{% endblock body_block %}							
+			</div>					
+		</main>	
 	</body>
 </html>

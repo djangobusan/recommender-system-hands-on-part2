@@ -21,4 +21,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('reviews.urls')),
     path('logout/', views.user_logout, name='Logout'),
+    path('posters/', views.genrePage, name='MoviePosters'),
+
 ]

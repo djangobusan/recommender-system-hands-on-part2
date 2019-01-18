@@ -443,3 +443,56 @@ def index(request):
 
     {% endblock %}    
     ```
+
+9. Admin
+    * admin.py
+    ```
+    from django.contrib import admin
+    from .models import movie, rating, genre, UserInfo
+
+    admin.site.register(genre)
+    admin.site.register(movie)
+    admin.site.register(rating)
+    admin.site.register(UserInfo)
+    ```
+
+10. 로그아웃
+    * view.py
+    ```
+    @login_required
+    def user_logout(request):
+        logout(request)
+        return HttpResponseRedirect(reverse('reviews:UserLogin'))
+    ```
+
+11. 영화 데이터를 입력해보자!
+    * movie_to_db.py
+    ```
+    import csv
+    import os
+    import django
+
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings.settings')
+
+    django.setup()
+
+    from reviews.models import movie, genre
+
+    csv_filepathname="./data/movies.csv"
+
+    dataReader = csv.reader(open(csv_filepathname, encoding="utf8"), delimiter=',', quotechar='"')
+
+    for row in dataReader:
+        film = movie()
+        film.movieId = row[0]
+        title_year = row[1].split(sep="(")
+        film.title = title_year[0]
+        film_year1 = title_year[len(title_year)-1].split(sep=")")
+        film.year = film_year1[0]
+        film.save()
+        for gen in row[2].split(sep="|"):
+            g =  genre.objects.get_or_create(name=gen)[0]
+            film.genres.add(g)
+            g.save()
+        film.save()    
+    ```
