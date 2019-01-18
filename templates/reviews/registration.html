@@ -1,0 +1,23 @@
+{% extends "reviews/index.html" %}
+
+{% block body_block %}
+
+<div class="jumbotron">
+	{% if registered %}
+		<h1>Thank you for registering</h1>
+	{% else %}
+		<h1>Register Here!</h1>
+		<h3>Fill out the form:</h3>
+		<form method="post">
+			{% csrf_token %}
+            {% for field in user_form %}
+            <div class="form-group">
+                <input type={{ field.name }} name={{ field.name }} id={{ field.name }} placeholder={{ field.name }} class="form-control">
+            </div>
+            {% endfor %}
+			<button type="submit" value="Register">registered</button>
+		</form>
+	{% endif %}
+</div>
+
+{% endblock %}

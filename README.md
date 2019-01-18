@@ -107,7 +107,7 @@
     (venv) $ python manage.py runserver
     ```
     
-4. Model -> View -> Template로 구성
+4. Model
     * 모델 분석
         * movies.csv
         ```
@@ -173,5 +173,273 @@
             return self.user.username    
     ```
 
+5. URL 추가
+    * `reviews` 추가
+    ```
+    from django.urls import path
+    from . import views
 
+    app_name = 'reviews'
 
+    urlpatterns = [
+        path('', views.index, name='Index'),
+    ]    
+    ```
+
+    * 프로젝트에 추가
+    ```
+    from django.contrib import admin
+    from django.urls import path, include
+
+    urlpatterns = [
+        path('admin/', admin.site.urls),
+        path('', include('reviews.urls')),
+    ]
+    ```
+
+6. View 작성
+```
+from django.shortcuts import render
+
+def index(request):
+    return render(request, 'reviews/index.html', {})    
+
+```
+
+7. Tempates 작성
+    * base.html 작성
+    ```
+    <!DOCTYPE html>
+    <html>
+        <head>
+            {% load staticfiles %}
+            <title>DBUG - 영화 추천 시스템 만들기 Part2</title>
+            <meta charset="utf-8">
+            <link rel="stylesheet" type="text/css" href="{% static "css/bootstrap.min.css" %}">
+            <style>
+            body {
+                padding-top: 3.5rem;
+            }
+            </style>
+        </head>
+
+        <body>
+            <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+                <a class="navbar-brand" href="#">MovieReview</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+                    <ul class="navbar-nav mr-auto">
+                        <li class="nav-item active">
+                            <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+                        </li>
+                    </ul>
+                    <form class="form-inline my-2 my-lg-0">
+                    <input class="form-control mr-sm-2" type="text" placeholder="Search" aria-label="Search">
+                    <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+                    </form>
+                </div>
+            </nav>
+
+        <main>
+            <div class="container">
+                {% block body_block %}
+                {% endblock body_block %}							
+            </div>					
+        </main>
+
+        <script type="text/javascript" src="{% static "js/jquery-3.3.1.min.js" %}"></script>
+        <script type="text/javascript" src="{% static "js/bootstrap.bundle.min.js" %}"></script>
+        </body>
+    </html>
+    ```
+
+    * reviews/index.html
+    ```
+    {% extends "base.html" %}
+    {% block body_block %}
+        <div class="jumbotron">
+            <h1>Hello, Django</h1>
+        </div>
+    {% endblock body_block %}
+	    
+    ```
+
+8. 로그인 / 가입 처리
+    * reviews/urls.py
+    ```
+	path('', views.index, name='UserLogin'),
+    ```
+
+    * reviews/form.py
+    ```
+    from django import forms
+    from django.contrib.auth.models import User
+    from .models import UserInfo
+
+    class UserForm(forms.ModelForm):
+        password = forms.CharField(widget=forms.PasswordInput())
+        class Meta:
+            model = User
+            fields = ('username', 'email', 'password')
+    ```
+
+    * reviews/view.py
+    ```
+    from django.shortcuts import render
+    from django.urls import reverse
+    from django.http import HttpResponseRedirect, HttpResponse
+    from django.contrib.auth import authenticate, login, logout
+
+    from .forms import UserForm
+
+    def index(request):
+        if request.method == 'POST':
+            username = request.POST.get('username')
+            password = request.POST.get('password')
+            user = authenticate(username=username, password=password)
+            if user:
+                if user.is_active:
+                    login(request, user)
+                    return HttpResponseRedirect(reverse('reviews:UserLogin'))
+                else:
+                    return HttpResponse("ACCOUNT NOT ACTIVE")
+            else:
+                print("Someone tried to loggin and failed!")
+                print("Username: {} and Password: {}".format(username, password))
+                return HttpResponse("INVALID LOGIN DETAILS SUPPLIED")
+        else:
+            return render(request, 'reviews/index.html', {})    
+
+    def register(request):
+        registered = False
+
+        if request.method == 'POST':
+            user_form = UserForm(data=request.POST)
+
+            if user_form.is_valid():
+                user = user_form.save()
+                user.set_password(user.password)
+                user.save()
+
+                registered = True
+            else:
+                print(user_form.errors)
+        else:
+            user_form = UserForm()
+
+        return render(request, 'reviews/registration.html', {'registered': registered, 'user_form': user_form})
+
+    ```
+
+    * base.html
+    ```
+    <!DOCTYPE html>
+    <html>
+        <head>
+            {% load staticfiles %}
+            <title>DBUG - 영화 추천 시스템 만들기 Part2</title>
+            <meta charset="utf-8">
+            <link rel="stylesheet" type="text/css" href="{% static "css/bootstrap.min.css" %}">
+            <style>
+            body {
+                padding-top: 3.5rem;
+            }
+            </style>
+        </head>
+
+        <body>
+            <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+                <a class="navbar-brand" href="{% url 'reviews:UserLogin' %}">MovieReview</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+                    <ul class="navbar-nav mr-auto">
+                        <li class="nav-item active">
+                            <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+                        </li>
+                        {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Logout</a>
+                        </li>
+                        {% endif %}
+                        {% if not user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'reviews:Registration' %}">Register</a>
+                        </li>
+                        {% endif %}					
+                    </ul>
+
+                    <form class="form-inline my-2 my-lg-0">
+                    <input class="form-control mr-sm-2" type="text" placeholder="Search" aria-label="Search">
+                    <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+                    </form>
+                </div>
+            </nav>
+
+        <main>
+            <div class="container">
+                {% block body_block %}
+                {% endblock body_block %}							
+            </div>					
+        </main>
+
+        <script type="text/javascript" src="{% static "js/jquery-3.3.1.min.js" %}"></script>
+        <script type="text/javascript" src="{% static "js/bootstrap.bundle.min.js" %}"></script>
+        </body>
+    </html>    
+    ```
+
+    * index.html
+    ```
+    {% extends "base.html" %}
+    {% block body_block %}
+        <div class="jumbotron">
+            <h1>Please Login</h1>
+            <form action="{% url 'reviews:UserLogin' %}" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" name="username" id="username" placeholder="Enter Username" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" name="password" id="password" placeholder="Enter Password" class="form-control">
+                </div>
+                <button type="submit" value="Login" class="btn btn-primary">Login</button>
+            </form>
+        </div>
+    {% endblock body_block %}
+	    
+    ```
+
+    * registration.html
+    ```
+    {% extends "reviews/index.html" %}
+
+    {% block body_block %}
+
+    <div class="jumbotron">
+        {% if registered %}
+            <h1>Thank you for registering</h1>
+        {% else %}
+            <h1>Register Here!</h1>
+            <h3>Fill out the form:</h3>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in user_form %}
+                <div class="form-group">
+                    <input type={{ field.name }} name={{ field.name }} id={{ field.name }} placeholder={{ field.name }} class="form-control">
+                </div>
+                {% endfor %}
+                <button type="submit" value="Register">registered</button>
+            </form>
+        {% endif %}
+    </div>
+
+    {% endblock %}    
+    ```
